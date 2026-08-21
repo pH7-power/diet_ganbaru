@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>💪 ダイエット トラッカー</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --glass-bg: rgba(30, 41, 59, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      overscroll-behavior-y: none;
+    }
+
+    /* Mobile Container for PC & Mobile */
+    .app-container {
+      width: 100%;
+      max-width: 600px;
+      min-height: 100vh;
+      position: relative;
+      padding-bottom: 96px;
+      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15), transparent 40%),
+                  radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.1), transparent 40%),
+                  #0f172a;
+      border-left: 1px solid rgba(255, 255, 255, 0.05);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Glass Cards */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 1.25rem;
+      box-shadow: var(--glass-shadow);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .glass-input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      background-color: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--glass-border);
+      border-radius: 0.875rem;
+      font-size: 1rem;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+    .glass-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+      background-color: rgba(15, 23, 42, 0.9);
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+      transition: all 0.2s ease;
+    }
+    .btn-gradient:active {
+      transform: scale(0.97);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+
+    .text-gradient-blue {
+      background: linear-gradient(135deg, #60a5fa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .text-gradient-green {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .text-gradient-orange {
+      background: linear-gradient(135deg, #fb923c, #f43f5e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .text-gradient-purple {
+      background: linear-gradient(135deg, #c084fc, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tab-content {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container flex flex-col justify-between">
+    <div>
+      <!-- Header -->
+      <header class="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 px-5 pt-6 pb-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h1 class="text-xl font-black tracking-tight text-white flex items-center gap-2">
+              <span>💪</span>
+              <span class="text-gradient-blue">Diet Tracker</span>
+            </h1>
+            <p class="text-[11px] text-slate-400 font-medium mt-0.5">目標: 78.0kg → 70.0kg (2026/10/31)</p>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <!-- Health & Garmin Sync Button -->
+            <button onclick="app.openSyncModal()" title="ヘルスケア・Garmin連携" class="px-2.5 py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/40 text-xs text-indigo-300 hover:text-white flex items-center gap-1.5 active:scale-95 transition shadow-[0_0_12px_rgba(99,102,241,0.2)]">
+              <span>⌚</span>
+              <span class="text-[11px] font-bold">連携</span>
+            </button>
+
+            <!-- Export / Save Button -->
+            <button onclick="app.exportData()" title="データ保存・確認" class="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 hover:text-white flex items-center gap-1.5 active:scale-95 transition">
+              <span>💾</span>
+              <span class="text-[11px]">出力</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content Area -->
+      <main id="main-content" class="p-4"></main>
+    </div>
+
+    <!-- Bottom Navigation Bar (Fixed 600px max) -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[600px] z-40 bg-slate-900/90 backdrop-blur-2xl border-t border-white/10 px-4 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
+      <div class="flex justify-around items-center h-16">
+        <button id="nav-home" onclick="app.setTab('home')" class="flex flex-col items-center justify-center w-full h-full text-indigo-400 transition-all">
+          <span class="text-2xl">📊</span>
+          <span class="text-[10px] font-bold mt-1 tracking-wider">ホーム</span>
+        </button>
+
+        <button id="nav-add" onclick="app.setTab('add')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 transition-all">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-600/20 border border-indigo-500/40 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.3)]">
+            <span class="text-xl">➕</span>
+          </div>
+          <span class="text-[10px] font-bold mt-0.5 tracking-wider">記録</span>
+        </button>
+
+        <button id="nav-stats" onclick="app.setTab('stats')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 transition-all">
+          <span class="text-2xl">🎯</span>
+          <span class="text-[10px] font-bold mt-1 tracking-wider">進捗</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Sync Modal (Garmin & Apple Health) -->
+  <div id="sync-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-[500px] bg-slate-900/95 border border-indigo-500/30 p-5 rounded-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700/50">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span>⌚</span> ヘルスケア・Garmin連携
+        </h3>
+        <button onclick="app.closeSyncModal()" class="text-slate-400 hover:text-white text-xl font-bold w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800">×</button>
+      </div>
+
+      <!-- Option 1: File Drop / Import -->
+      <div class="mb-5">
+        <label class="block text-xs font-bold text-indigo-300 mb-2">① ファイルから取り込み (Garmin / ヘルスケア)</label>
+        <div id="drop-zone" onclick="document.getElementById('health-file-input').click()" class="border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-indigo-950/20 rounded-xl p-4 text-center cursor-pointer transition">
+          <span class="text-2xl block mb-1">📁</span>
+          <p class="text-xs font-bold text-slate-200">ファイルをドロップ または クリックして選択</p>
+          <p class="text-[10px] text-slate-400 mt-1">対応: CSV / JSON / Garmin TCX / GPX</p>
+          <input id="health-file-input" type="file" accept=".csv,.json,.tcx,.gpx" onchange="app.handleFileUpload(event)" class="hidden" />
+        </div>
+      </div>
+
+      <!-- Option 2: Quick URL / iPhone Shortcut Sync Guide -->
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-emerald-300 mb-2">② iPhone「ヘルスケア」ワンタップ自動同期</label>
+        <div class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-3 text-xs space-y-2 text-slate-300">
+          <p class="font-medium">iPhoneの「ショートカット」アプリを使うと、ヘルスケア（Garmin同期データ含む）から**最新の体重と消費カロリーを1タップで自動取り込み**できます。</p>
+          
+          <div class="bg-slate-950/70 p-2.5 rounded-lg border border-slate-700/40 text-[11px] font-mono text-indigo-300 break-all">
+            ...html?weight=[ヘルスケアの体重]&burned=[アクティブエネルギー]
+          </div>
+
+          <div class="flex gap-2 pt-1">
+            <button onclick="app.testHealthShortcut()" class="w-full py-2 bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-600/40 rounded-lg font-bold text-[11px] transition">
+              🧪 連携テスト（サンプル値で即時反映）
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option 3: Garmin Direct Sync Info -->
+      <div class="bg-slate-800/40 rounded-xl p-3 text-[11px] text-slate-400">
+        <p class="font-semibold text-slate-300 mb-1">💡 Garminとヘルスケアの連携について</p>
+        <p>Garmin Connectアプリの設定で「Apple ヘルスケア（または Google Health Connect）」との連携をONにすると、Garminで記録した心拍数ベースの消費カロリーや体重が自動でスマホに届きます。</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Application Constants & Initial Data ---
+    const STORAGE_KEY = 'diet_tracker_data_v2';
+
+    const EXERCISE_TYPES = {
+      running: { name: 'ランニング', caloriesPerHour: 600 },
+      walking: { name: 'ウォーキング', caloriesPerHour: 300 },
+      cycling: { name: 'サイクリング', caloriesPerHour: 400 },
+      gym_cardio: { name: 'ジム (有酸素)', caloriesPerHour: 500 },
+      gym_strength: { name: 'ジム (筋トレ)', caloriesPerHour: 450 },
+      yoga: { name: 'ヨガ・ストレッチ', caloriesPerHour: 250 },
+      swimming: { name: '水泳', caloriesPerHour: 550 },
+      soccer: { name: '球技・スポーツ', caloriesPerHour: 600 }
+    };
+
+    const DEFAULT_DATA = {
+      metadata: {
+        goal_start_weight: 78.0,
+        goal_target_weight: 70.0,
+        goal_start_date: "2026-08-21",
+        goal_deadline: "2026-10-31",
+        height_cm: 173,
+        last_updated: new Date().toISOString()
+      },
+      daily_records: [
+        {
+          date: "2026-08-19",
+          weight_morning: { value: 78.0, time: "07:30", note: "スタート時" },
+          exercise: [{ type: "walking", duration_minutes: 30, calories_burned: 150 }],
+          meals: [{ description: "朝食・軽食", calories: 500 }],
+          total_calories_consumed: 1800,
+          total_calories_burned: 150
+        },
+        {
+          date: "2026-08-20",
+          weight_morning: { value: 77.6, time: "07:15", note: "快調" },
+          exercise: [{ type: "gym_cardio", duration_minutes: 45, calories_burned: 375 }],
+          meals: [{ description: "鶏胸肉サラダ", calories: 600 }],
+          total_calories_consumed: 1650,
+          total_calories_burned: 375
+        },
+        {
+          date: "2026-08-21",
+          weight_morning: { value: 77.2, time: "07:20", note: "体重減少傾向" },
+          exercise: [{ type: "running", duration_minutes: 30, calories_burned: 300 }],
+          meals: [{ description: "高タンパク食", calories: 700 }],
+          total_calories_consumed: 1700,
+          total_calories_burned: 300
+        }
+      ]
+    };
+
+    // --- DietTracker Class ---
+    class DietTracker {
+      constructor() {
+        this.currentTab = 'home';
+        this.data = this.loadData();
+        this.chartInstances = {};
+        this.init();
+        this.checkUrlParams();
+      }
+
+      loadData() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.daily_records && parsed.daily_records.length > 0) return parsed;
+          }
+        } catch (e) {
+          console.warn('LocalStorage load failed, using default data:', e);
+        }
+        this.saveData(DEFAULT_DATA);
+        return JSON.parse(JSON.stringify(DEFAULT_DATA));
+      }
+
+      saveData(dataToSave) {
+        if (dataToSave) this.data = dataToSave;
+        this.data.metadata.last_updated = new Date().toISOString();
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        } catch (e) {
+          console.error('LocalStorage save error:', e);
+        }
+      }
+
+      init() {
+        this.setupDragAndDrop();
+        this.render();
+      }
+
+      // Check if opened via iOS Shortcut or URL parameters (e.g. ?weight=76.8&burned=450)
+      checkUrlParams() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const weightParam = params.get('weight');
+          const burnedParam = params.get('burned') || params.get('calories');
+          const consumedParam = params.get('consumed');
+          const noteParam = params.get('note') || 'ヘルスケア自動連携';
+
+          let hasImported = false;
+          if (weightParam || burnedParam || consumedParam) {
+            const record = this.getOrCreateTodayRecord();
+            const nowTime = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+            if (weightParam && !isNaN(parseFloat(weightParam))) {
+              record.weight_morning = {
+                value: parseFloat(weightParam),
+                time: nowTime,
+                note: noteParam
+              };
+              hasImported = true;
+            }
+
+            if (burnedParam && !isNaN(parseInt(burnedParam))) {
+              const burned = parseInt(burnedParam);
+              record.exercise = record.exercise || [];
+              record.exercise.push({
+                type: 'gym_cardio',
+                duration_minutes: 30,
+                time: nowTime,
+                calories_burned: burned
+              });
+              record.total_calories_burned = (record.total_calories_burned || 0) + burned;
+              hasImported = true;
+            }
+
+            if (consumedParam && !isNaN(parseInt(consumedParam))) {
+              const consumed = parseInt(consumedParam);
+              record.total_calories_consumed = (record.total_calories_consumed || 0) + consumed;
+              hasImported = true;
+            }
+
+            if (hasImported) {
+              this.saveData();
+              setTimeout(() => {
+                this.showToast(`⌚ ヘルスケアからデータを取り込みました！`);
+                // Clean URL parameters without reloading
+                window.history.replaceState({}, document.title, window.location.pathname);
+                this.render();
+              }, 500);
+            }
+          }
+        } catch (e) {
+          console.warn('URL param parse error:', e);
+        }
+      }
+
+      testHealthShortcut() {
+        const sampleWeight = (76.8 + (Math.random() * 0.4 - 0.2)).toFixed(1);
+        const sampleBurned = Math.floor(350 + Math.random() * 200);
+        const record = this.getOrCreateTodayRecord();
+        const nowTime = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+        record.weight_morning = {
+          value: parseFloat(sampleWeight),
+          time: nowTime,
+          note: "ヘルスケア / Garmin連携"
+        };
+        record.exercise = record.exercise || [];
+        record.exercise.push({
+          type: "running",
+          duration_minutes: 35,
+          time: nowTime,
+          calories_burned: sampleBurned
+        });
+        record.total_calories_burned = (record.total_calories_burned || 0) + sampleBurned;
+
+        this.saveData();
+        this.closeSyncModal();
+        this.showToast(`🎉 Garmin/ヘルスケア同期完了: 体重${sampleWeight}kg, 消費+${sampleBurned}kcal`);
+        this.render();
+      }
+
+      openSyncModal() {
+        const modal = document.getElementById('sync-modal');
+        if (modal) modal.classList.remove('hidden');
+      }
+
+      closeSyncModal() {
+        const modal = document.getElementById('sync-modal');
+        if (modal) modal.classList.add('hidden');
+      }
+
+      setupDragAndDrop() {
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        window.addEventListener('drop', (e) => {
+          e.preventDefault();
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            this.processFile(e.dataTransfer.files[0]);
+          }
+        });
+      }
+
+      handleFileUpload(event) {
+        if (event.target.files && event.target.files.length > 0) {
+          this.processFile(event.target.files[0]);
+        }
+      }
+
+      processFile(file) {
+        const reader = new FileReader();
+        const fname = file.name.toLowerCase();
+
+        reader.onload = (e) => {
+          const content = e.target.result;
+          try {
+            if (fname.endsWith('.json')) {
+              const parsed = JSON.parse(content);
+              if (parsed.daily_records) {
+                this.data = parsed;
+                this.saveData();
+                this.showToast('✅ JSONデータを復元・同期しました！');
+                this.closeSyncModal();
+                this.render();
+                return;
+              }
+            } else if (fname.endsWith('.csv')) {
+              this.parseCSV(content);
+              return;
+            } else if (fname.endsWith('.tcx') || fname.endsWith('.gpx')) {
+              this.parseTCXorGPX(content);
+              return;
+            }
+            alert('対応形式: CSV, JSON, Garmin TCX, GPX ファイル');
+          } catch (err) {
+            console.error('File parsing error:', err);
+            alert('ファイルの解析に失敗しました。形式をご確認ください。');
+          }
+        };
+
+        reader.readAsText(file);
+      }
+
+      parseCSV(text) {
+        const lines = text.trim().split('\n');
+        let importedCount = 0;
+        const record = this.getOrCreateTodayRecord();
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, ''));
+          if (cols.length >= 2) {
+            const val1 = parseFloat(cols[0]);
+            const val2 = parseFloat(cols[1]);
+            if (!isNaN(val1) && val1 >= 40 && val1 <= 150) {
+              record.weight_morning = { value: val1, time: "07:00", note: "CSVインポート" };
+              importedCount++;
+            } else if (!isNaN(val2) && val2 >= 40 && val2 <= 150) {
+              record.weight_morning = { value: val2, time: "07:00", note: "CSVインポート" };
+              importedCount++;
+            }
+          }
+        }
+
+        this.saveData();
+        this.closeSyncModal();
+        this.showToast(`📊 CSVから ${importedCount} 件のデータを取り込みました！`);
+        this.render();
+      }
+
+      parseTCXorGPX(xmlText) {
+        // Parse Garmin TCX / GPX for Total Calories and Duration
+        const calMatch = xmlText.match(/<Calories>(\d+)<\/Calories>/i);
+        const timeMatch = xmlText.match(/<TotalTimeSeconds>([\d.]+)<\/TotalTimeSeconds>/i);
+        const cal = calMatch ? parseInt(calMatch[1]) : 300;
+        const dur = timeMatch ? Math.round(parseFloat(timeMatch[1]) / 60) : 30;
+
+        const record = this.getOrCreateTodayRecord();
+        const nowTime = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+        record.exercise = record.exercise || [];
+        record.exercise.push({
+          type: "running",
+          duration_minutes: dur,
+          time: nowTime,
+          calories_burned: cal
+        });
+        record.total_calories_burned = (record.total_calories_burned || 0) + cal;
+
+        this.saveData();
+        this.closeSyncModal();
+        this.showToast(`⌚ Garminアクティビティ（${dur}分 / +${cal}kcal）を取り込みました！`);
+        this.render();
+      }
+
+      setTab(tab) {
+        this.currentTab = tab;
+        ['home', 'add', 'stats'].forEach(t => {
+          const btn = document.getElementById(`nav-${t}`);
+          if (btn) {
+            if (t === tab) {
+              btn.className = 'flex flex-col items-center justify-center w-full h-full text-indigo-400 scale-105 transition-all';
+            } else {
+              btn.className = 'flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-200 transition-all';
+            }
+          }
+        });
+        this.render();
+      }
+
+      getLatestWeight() {
+        const records = this.data.daily_records;
+        for (let i = records.length - 1; i >= 0; i--) {
+          if (records[i].weight_morning && records[i].weight_morning.value) {
+            return records[i].weight_morning.value;
+          }
+        }
+        return this.data.metadata.goal_start_weight;
+      }
+
+      getProgress() {
+        const start = this.data.metadata.goal_start_weight;
+        const target = this.data.metadata.goal_target_weight;
+        const current = this.getLatestWeight();
+        const totalToLose = Math.max(0.1, start - target);
+        const lost = start - current;
+        const percent = Math.min(100, Math.max(0, Math.round((lost / totalToLose) * 100)));
+        return {
+          start,
+          target,
+          current,
+          lost: lost.toFixed(1),
+          totalToLose: totalToLose.toFixed(1),
+          percent
+        };
+      }
+
+      getWeeklyStats() {
+        let totalBurned = 0;
+        let totalMinutes = 0;
+        let totalConsumed = 0;
+        const records = this.data.daily_records.slice(-7);
+
+        records.forEach(r => {
+          if (r.exercise) {
+            r.exercise.forEach(ex => {
+              totalBurned += ex.calories_burned || 0;
+              totalMinutes += ex.duration_minutes || 0;
+            });
+          }
+          totalConsumed += r.total_calories_consumed || 0;
+        });
+
+        return {
+          totalBurned,
+          totalHours: (totalMinutes / 60).toFixed(1),
+          totalConsumed,
+          balance: totalBurned - totalConsumed
+        };
+      }
+
+      getTargetPace() {
+        const current = this.getLatestWeight();
+        const target = this.data.metadata.goal_target_weight;
+        const kgRemaining = Math.max(0, current - target);
+        const caloriesNeeded = Math.round(kgRemaining * 7700);
+        
+        const deadline = new Date(this.data.metadata.goal_deadline);
+        const today = new Date();
+        const daysRemaining = Math.max(1, Math.ceil((deadline - today) / (1000 * 60 * 60 * 24)));
+        const dailyTarget = Math.round(caloriesNeeded / daysRemaining);
+
+        return {
+          kgRemaining: kgRemaining.toFixed(1),
+          caloriesNeeded,
+          daysRemaining,
+          dailyTarget
+        };
+      }
+
+      render() {
+        const main = document.getElementById('main-content');
+        if (!main) return;
+
+        // Destroy previous charts if any
+        Object.values(this.chartInstances).forEach(c => c && c.destroy && c.destroy());
+        this.chartInstances = {};
+
+        if (this.currentTab === 'home') {
+          main.innerHTML = this.renderHome();
+          setTimeout(() => this.initCharts(), 50);
+        } else if (this.currentTab === 'add') {
+          main.innerHTML = this.renderAdd();
+        } else if (this.currentTab === 'stats') {
+          main.innerHTML = this.renderStats();
+        }
+      }
+
+      // --- HOME TAB ---
+      renderHome() {
+        const progress = this.getProgress();
+        const weekly = this.getWeeklyStats();
+
+        return `
+          <div class="tab-content space-y-4">
+            <!-- 4 Quick Metric Cards -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="glass-card text-center p-4 !mb-0">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">現在の体重</p>
+                <div class="flex items-baseline justify-center gap-1">
+                  <span class="text-3xl font-black text-gradient-blue">${progress.current}</span>
+                  <span class="text-xs font-bold text-slate-400">kg</span>
+                </div>
+              </div>
+
+              <div class="glass-card text-center p-4 !mb-0">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">目標達成度</p>
+                <div class="flex items-baseline justify-center gap-1">
+                  <span class="text-3xl font-black text-gradient-green">${progress.percent}</span>
+                  <span class="text-xs font-bold text-slate-400">%</span>
+                </div>
+              </div>
+
+              <div class="glass-card text-center p-4 !mb-0">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">減量達成</p>
+                <div class="flex items-baseline justify-center gap-1">
+                  <span class="text-2xl font-black text-gradient-orange">${progress.lost}</span>
+                  <span class="text-[11px] font-medium text-slate-400">/ ${progress.totalToLose} kg</span>
+                </div>
+              </div>
+
+              <div class="glass-card text-center p-4 !mb-0">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">週間運動</p>
+                <div class="flex items-baseline justify-center gap-1">
+                  <span class="text-2xl font-black text-gradient-purple">${weekly.totalHours}</span>
+                  <span class="text-xs font-bold text-slate-400">時間</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weight Chart Card -->
+            <div class="glass-card">
+              <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>📉</span> 体重推移グラフ
+                </h2>
+                <span class="text-[11px] font-medium text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">直近の記録</span>
+              </div>
+              <div class="relative w-full h-56">
+                <canvas id="weightChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Calories Burned Chart Card -->
+            <div class="glass-card">
+              <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>🔥</span> 消費カロリー推移
+                </h2>
+                <span class="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">運動別</span>
+              </div>
+              <div class="relative w-full h-48">
+                <canvas id="caloriesChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Detailed Stats Card -->
+            <div class="glass-card">
+              <h2 class="text-sm font-bold text-white flex items-center gap-2 mb-3">
+                <span>📋</span> 週間サマリー
+              </h2>
+              <div class="space-y-2.5 text-sm">
+                <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40">
+                  <span class="text-slate-400">推定消費カロリー</span>
+                  <span class="font-bold text-emerald-400">+${weekly.totalBurned.toLocaleString()} kcal</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40">
+                  <span class="text-slate-400">推定摂取カロリー</span>
+                  <span class="font-bold text-rose-400">-${weekly.totalConsumed.toLocaleString()} kcal</span>
+                </div>
+                <div class="flex justify-between items-center pt-1">
+                  <span class="text-slate-300 font-bold">運動・食事バランス</span>
+                  <span class="font-extrabold text-base ${weekly.balance >= 0 ? 'text-emerald-400' : 'text-slate-300'}">
+                    ${weekly.balance >= 0 ? '+' : ''}${weekly.balance.toLocaleString()} kcal
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      initCharts() {
+        const records = this.data.daily_records;
+        const labels = records.map(r => r.date.slice(5)); // MM-DD
+        const weights = records.map(r => r.weight_morning ? r.weight_morning.value : null);
+        const calories = records.map(r => r.total_calories_burned || 0);
+
+        // Weight Line Chart
+        const ctxWeight = document.getElementById('weightChart');
+        if (ctxWeight && window.Chart) {
+          this.chartInstances.weight = new Chart(ctxWeight, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: '体重 (kg)',
+                data: weights,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#818cf8',
+                pointBorderColor: '#0f172a',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: '#1e293b',
+                  titleColor: '#cbd5e1',
+                  bodyColor: '#818cf8',
+                  borderColor: 'rgba(255,255,255,0.1)',
+                  borderWidth: 1,
+                  padding: 10,
+                  callbacks: {
+                    label: (ctx) => ` ${ctx.parsed.y} kg`
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                  ticks: { color: '#94a3b8', font: { size: 11 } }
+                },
+                y: {
+                  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                  ticks: { color: '#94a3b8', font: { size: 11 } }
+                }
+              }
+            }
+          });
+        }
+
+        // Calories Bar Chart
+        const ctxCal = document.getElementById('caloriesChart');
+        if (ctxCal && window.Chart) {
+          this.chartInstances.calories = new Chart(ctxCal, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: '消費 (kcal)',
+                data: calories,
+                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                borderRadius: 6,
+                borderSkipped: false
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: '#1e293b',
+                  bodyColor: '#34d399',
+                  borderColor: 'rgba(255,255,255,0.1)',
+                  borderWidth: 1,
+                  padding: 10,
+                  callbacks: {
+                    label: (ctx) => ` +${ctx.parsed.y} kcal`
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { color: '#94a3b8', font: { size: 11 } }
+                },
+                y: {
+                  grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                  ticks: { color: '#94a3b8', font: { size: 11 } }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // --- RECORD TAB ---
+      renderAdd() {
+        const latestWeight = this.getLatestWeight();
+        const nowTime = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+          <div class="tab-content space-y-4">
+            <!-- 1. Weight Input Form -->
+            <div class="glass-card">
+              <h2 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+                <span>🏋️</span> 今日の体重を記録
+              </h2>
+              <form onsubmit="app.handleWeightSubmit(event)" class="space-y-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">体重 (kg)</label>
+                  <input id="input-weight" type="number" step="0.1" value="${latestWeight}" required class="glass-input text-center text-3xl font-black text-white" />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">測定時刻</label>
+                    <input id="input-weight-time" type="time" value="${nowTime}" class="glass-input" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">メモ (任意)</label>
+                    <input id="input-weight-note" type="text" placeholder="例: 朝食前" class="glass-input" />
+                  </div>
+                </div>
+                <button type="submit" class="btn-gradient w-full py-3 rounded-xl text-white font-bold text-sm tracking-wide">
+                  体重を保存する
+                </button>
+              </form>
+            </div>
+
+            <!-- 2. Exercise Log Form -->
+            <div class="glass-card">
+              <h2 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+                <span>🏃</span> 運動を記録
+              </h2>
+              <form onsubmit="app.handleExerciseSubmit(event)" class="space-y-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">運動種別</label>
+                  <select id="input-exercise-type" onchange="app.updateBurnedEstimate()" class="glass-input bg-slate-900">
+                    ${Object.entries(EXERCISE_TYPES).map(([key, val]) => `
+                      <option value="${key}">${val.name} (約${val.caloriesPerHour}kcal/時)</option>
+                    `).join('')}
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">運動時間 (分)</label>
+                    <input id="input-exercise-duration" type="number" step="5" min="5" value="30" oninput="app.updateBurnedEstimate()" class="glass-input" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">時刻</label>
+                    <input id="input-exercise-time" type="time" value="${nowTime}" class="glass-input" />
+                  </div>
+                </div>
+
+                <div class="bg-slate-800/60 border border-slate-700/50 p-3 rounded-xl text-center">
+                  <span class="text-[11px] font-semibold text-slate-400 uppercase">推定消費カロリー</span>
+                  <div class="text-2xl font-black text-gradient-orange">
+                    <span id="burned-estimate">300</span> <span class="text-xs text-slate-500 font-normal">kcal</span>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-gradient w-full py-3 rounded-xl text-white font-bold text-sm tracking-wide">
+                  運動を記録する
+                </button>
+              </form>
+            </div>
+
+            <!-- 3. Meal Log Form -->
+            <div class="glass-card">
+              <h2 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+                <span>🍽️</span> 食事を記録
+              </h2>
+              <form onsubmit="app.handleMealSubmit(event)" class="space-y-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1.5">食事内容</label>
+                  <input id="input-meal-desc" type="text" placeholder="例: 鶏胸肉サラダ、玄米ご飯" required class="glass-input" />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">推定摂取 (kcal)</label>
+                    <input id="input-meal-cal" type="number" step="50" min="0" placeholder="600" class="glass-input" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">時刻</label>
+                    <input id="input-meal-time" type="time" value="${nowTime}" class="glass-input" />
+                  </div>
+                </div>
+                <button type="submit" class="btn-gradient w-full py-3 rounded-xl text-white font-bold text-sm tracking-wide">
+                  食事を記録する
+                </button>
+              </form>
+            </div>
+          </div>
+        `;
+      }
+
+      updateBurnedEstimate() {
+        const typeElem = document.getElementById('input-exercise-type');
+        const durElem = document.getElementById('input-exercise-duration');
+        const estElem = document.getElementById('burned-estimate');
+        if (typeElem && durElem && estElem) {
+          const type = typeElem.value;
+          const mins = parseInt(durElem.value) || 0;
+          const rate = EXERCISE_TYPES[type] ? EXERCISE_TYPES[type].caloriesPerHour : 300;
+          estElem.innerText = Math.round((rate / 60) * mins);
+        }
+      }
+
+      getOrCreateTodayRecord() {
+        const today = new Date().toISOString().split('T')[0];
+        let record = this.data.daily_records.find(r => r.date === today);
+        if (!record) {
+          record = {
+            date: today,
+            weight_morning: null,
+            exercise: [],
+            meals: [],
+            total_calories_consumed: 0,
+            total_calories_burned: 0
+          };
+          this.data.daily_records.push(record);
+        }
+        return record;
+      }
+
+      handleWeightSubmit(e) {
+        e.preventDefault();
+        const weightVal = parseFloat(document.getElementById('input-weight').value);
+        const timeVal = document.getElementById('input-weight-time').value;
+        const noteVal = document.getElementById('input-weight-note').value;
+
+        if (isNaN(weightVal) || weightVal <= 0) return alert('正しい体重を入力してください');
+
+        const record = this.getOrCreateTodayRecord();
+        record.weight_morning = {
+          value: weightVal,
+          time: timeVal,
+          note: noteVal
+        };
+
+        this.saveData();
+        this.showToast('✅ 体重を記録しました！');
+        this.setTab('home');
+      }
+
+      handleExerciseSubmit(e) {
+        e.preventDefault();
+        const type = document.getElementById('input-exercise-type').value;
+        const duration = parseInt(document.getElementById('input-exercise-duration').value) || 30;
+        const time = document.getElementById('input-exercise-time').value;
+        const rate = EXERCISE_TYPES[type] ? EXERCISE_TYPES[type].caloriesPerHour : 300;
+        const burned = Math.round((rate / 60) * duration);
+
+        const record = this.getOrCreateTodayRecord();
+        record.exercise = record.exercise || [];
+        record.exercise.push({
+          type,
+          duration_minutes: duration,
+          time,
+          calories_burned: burned
+        });
+        record.total_calories_burned = (record.total_calories_burned || 0) + burned;
+
+        this.saveData();
+        this.showToast(`🔥 運動（+${burned}kcal）を記録しました！`);
+        this.setTab('home');
+      }
+
+      handleMealSubmit(e) {
+        e.preventDefault();
+        const desc = document.getElementById('input-meal-desc').value;
+        const cal = parseInt(document.getElementById('input-meal-cal').value) || 0;
+        const time = document.getElementById('input-meal-time').value;
+
+        if (!desc.trim()) return alert('食事内容を入力してください');
+
+        const record = this.getOrCreateTodayRecord();
+        record.meals = record.meals || [];
+        record.meals.push({
+          description: desc,
+          calories: cal,
+          time
+        });
+        record.total_calories_consumed = (record.total_calories_consumed || 0) + cal;
+
+        this.saveData();
+        this.showToast('🍽️ 食事を記録しました！');
+        this.setTab('home');
+      }
+
+      // --- STATS TAB ---
+      renderStats() {
+        const progress = this.getProgress();
+        const pace = this.getTargetPace();
+
+        return `
+          <div class="tab-content space-y-4">
+            <!-- Progress Bar Card -->
+            <div class="glass-card">
+              <h2 class="text-sm font-bold text-white flex items-center gap-2 mb-4">
+                <span>🎯</span> 目標達成度
+              </h2>
+              <div class="mb-2 flex justify-between items-end">
+                <span class="text-xs text-slate-400 font-semibold">トータル進捗</span>
+                <span class="text-2xl font-black text-gradient-green">${progress.percent}%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-4 p-0.5 border border-slate-700/50 shadow-inner">
+                <div class="bg-gradient-to-r from-emerald-400 to-teal-400 h-full rounded-full transition-all duration-1000 shadow-[0_0_12px_rgba(52,211,153,0.5)]" style="width: ${progress.percent}%"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-500 font-bold mt-2">
+                <span>スタート: ${progress.start}kg</span>
+                <span>目標: ${progress.target}kg</span>
+              </div>
+            </div>
+
+            <!-- Target Pace Card -->
+            <div class="glass-card bg-gradient-to-br from-slate-800/80 to-slate-900/90 border border-indigo-500/20">
+              <h2 class="text-sm font-bold text-white flex items-center gap-2 mb-3">
+                <span>🚀</span> 1日の目標ペース
+              </h2>
+              <div class="space-y-2.5 text-sm">
+                <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40">
+                  <span class="text-slate-400">残り期間</span>
+                  <span class="font-bold text-white bg-slate-800 px-2.5 py-0.5 rounded-lg">${pace.daysRemaining} 日</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40">
+                  <span class="text-slate-400">残り減量</span>
+                  <span class="font-bold text-rose-400">${pace.kgRemaining} kg</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40">
+                  <span class="text-slate-400">必要総赤字カロリー</span>
+                  <span class="font-bold text-indigo-400">${pace.caloriesNeeded.toLocaleString()} kcal</span>
+                </div>
+                <div class="mt-4 pt-3 bg-slate-900/60 rounded-xl p-3 text-center border border-indigo-500/30">
+                  <p class="text-xs font-bold text-slate-300 mb-0.5">1日の必要カロリー赤字</p>
+                  <p class="text-3xl font-black text-gradient-blue">${pace.dailyTarget.toLocaleString()} <span class="text-sm font-normal text-slate-400">kcal/日</span></p>
+                  <p class="text-[11px] text-slate-500 mt-1">※ 運動消費と食事制限の合計目標</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- History Records List -->
+            <div class="glass-card">
+              <h2 class="text-sm font-bold text-white flex items-center gap-2 mb-3">
+                <span>📅</span> 過去の記録一覧
+              </h2>
+              <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                ${this.data.daily_records.slice().reverse().map(r => `
+                  <div class="flex justify-between items-center bg-slate-800/40 border border-slate-700/30 p-2.5 rounded-xl text-xs">
+                    <div>
+                      <span class="font-bold text-white">${r.date}</span>
+                      <span class="text-slate-400 ml-2">${r.weight_morning ? `${r.weight_morning.value}kg` : '体重未記録'}</span>
+                    </div>
+                    <div class="flex gap-2 text-[11px]">
+                      <span class="text-emerald-400">+${r.total_calories_burned || 0}kcal</span>
+                      <span class="text-rose-400">-${r.total_calories_consumed || 0}kcal</span>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      showToast(msg) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-indigo-600/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-md border border-white/20 animate-bounce';
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+      }
+
+      exportData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.data, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `diet_log_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      }
+    }
+
+    // Initialize the app immediately on DOM ready
+    window.addEventListener('DOMContentLoaded', () => {
+      window.app = new DietTracker();
+    });
+  </script>
+</body>
+</html>
